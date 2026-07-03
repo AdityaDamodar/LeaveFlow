@@ -70,12 +70,62 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
 
-    res.json({
-        message: "Login API Working"
-    });
+    try {
+
+        const { email, password } = req.body;
+
+        // Check required fields
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Please fill all fields"
+            });
+        }
+
+        // Find user
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        // Compare password
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        // Success
+        res.status(200).json({
+            success: true,
+            message: "Login Successful",
+            token: generateToken(user._id, user.role),
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                leaveBalance: user.leaveBalance,
+            }
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
 
 };
-
 module.exports = {
     registerUser,
     loginUser,
